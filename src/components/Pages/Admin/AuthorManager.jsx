@@ -11,9 +11,18 @@ export default function AuthorManager() {
     });
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
+    const [editingId, setEditingId] = useState(null);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
     useEffect(() => {
-        setAuthors(authorsData);
+        // Load dari localStorage, jika ada. Jika tidak ada, gunakan default data
+        const savedAuthors = localStorage.getItem("authors");
+        if (savedAuthors) {
+            setAuthors(JSON.parse(savedAuthors));
+        } else {
+            setAuthors(authorsData);
+            localStorage.setItem("authors", JSON.stringify(authorsData));
+        }
     }, []);
 
     const handleInputChange = (e) => {
@@ -45,15 +54,61 @@ export default function AuthorManager() {
             email: formData.email,
             bio: formData.bio,
         };
-        setAuthors([...authors, newAuthor]);
+        const updatedAuthors = [...authors, newAuthor];
+        setAuthors(updatedAuthors);
+        localStorage.setItem("authors", JSON.stringify(updatedAuthors));
         setFormData({ name: "", email: "", bio: "" });
         setIsFormOpen(false);
-        alert("Author berhasil ditambahkan!");
+        alert("✅ Author berhasil ditambahkan!");
+    };
+
+    const handleEditClick = (author) => {
+        setEditingId(author.id);
+        setFormData({
+            name: author.name,
+            email: author.email,
+            bio: author.bio,
+        });
+        setIsEditModalOpen(true);
+    };
+
+    const handleUpdateAuthor = (e) => {
+        e.preventDefault();
+
+        if (formData.name.trim() === "") {
+            alert("Nama author tidak boleh kosong!");
+            return;
+        }
+
+        if (!validateEmail(formData.email)) {
+            alert("Email tidak valid!");
+            return;
+        }
+
+        const updatedAuthors = authors.map((a) =>
+            a.id === editingId
+                ? {
+                    ...a,
+                    name: formData.name,
+                    email: formData.email,
+                    bio: formData.bio,
+                }
+                : a
+        );
+        setAuthors(updatedAuthors);
+        localStorage.setItem("authors", JSON.stringify(updatedAuthors));
+        setFormData({ name: "", email: "", bio: "" });
+        setEditingId(null);
+        setIsEditModalOpen(false);
+        alert("✅ Author berhasil diperbarui!");
     };
 
     const handleDeleteAuthor = (id) => {
-        if (confirm("Apakah Anda yakin ingin menghapus author ini?")) {
-            setAuthors(authors.filter((a) => a.id !== id));
+        if (confirm("⚠️ Apakah Anda yakin ingin menghapus author ini?")) {
+            const updatedAuthors = authors.filter((a) => a.id !== id);
+            setAuthors(updatedAuthors);
+            localStorage.setItem("authors", JSON.stringify(updatedAuthors));
+            alert("✅ Author berhasil dihapus!");
         }
     };
 
@@ -132,6 +187,75 @@ export default function AuthorManager() {
                 </div>
             )}
 
+            {isEditModalOpen && (
+                <div className="modal-overlay" onClick={() => setIsEditModalOpen(false)}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2>✏️ Edit Author</h2>
+                            <button
+                                className="modal-close"
+                                onClick={() => setIsEditModalOpen(false)}
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        <form onSubmit={handleUpdateAuthor} className="modal-form">
+                            <div className="form-group">
+                                <label htmlFor="edit-name">Nama Author *</label>
+                                <input
+                                    type="text"
+                                    id="edit-name"
+                                    name="name"
+                                    placeholder="Masukkan nama author..."
+                                    value={formData.name}
+                                    onChange={handleInputChange}
+                                    className="form-input"
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="edit-email">Email *</label>
+                                <input
+                                    type="email"
+                                    id="edit-email"
+                                    name="email"
+                                    placeholder="Masukkan email author..."
+                                    value={formData.email}
+                                    onChange={handleInputChange}
+                                    className="form-input"
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="edit-bio">Bio / Deskripsi</label>
+                                <textarea
+                                    id="edit-bio"
+                                    name="bio"
+                                    placeholder="Masukkan bio author..."
+                                    value={formData.bio}
+                                    onChange={handleInputChange}
+                                    className="form-textarea"
+                                    rows="3"
+                                />
+                            </div>
+
+                            <div className="modal-actions">
+                                <button type="submit" className="btn-submit">
+                                    💾 Perbarui Author
+                                </button>
+                                <button
+                                    type="button"
+                                    className="btn-cancel"
+                                    onClick={() => setIsEditModalOpen(false)}
+                                >
+                                    Batal
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
             <div className="data-grid">
                 {filteredAuthors.length === 0 ? (
                     <div className="empty-state">
@@ -151,6 +275,12 @@ export default function AuthorManager() {
                                 <strong>Bio:</strong> {author.bio || "Tidak ada deskripsi"}
                             </p>
                             <div className="card-actions">
+                                <button
+                                    className="btn-edit"
+                                    onClick={() => handleEditClick(author)}
+                                >
+                                    ✏️ Edit
+                                </button>
                                 <button
                                     className="btn-delete"
                                     onClick={() => handleDeleteAuthor(author.id)}

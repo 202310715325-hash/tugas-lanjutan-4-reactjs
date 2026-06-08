@@ -1,6 +1,6 @@
 import { useState } from "react";
 import "./admin.css";
-import Header from "../../shared/Header";
+import AdminHeader from "./AdminHeader";
 import Footer from "../../shared/Footer";
 import GenreManager from "./GenreManager";
 import AuthorManager from "./AuthorManager";
@@ -10,7 +10,7 @@ export default function Admin() {
 
     return (
         <>
-            <Header />
+            <AdminHeader />
             <div className="admin-container">
                 <div className="admin-header">
                     <h1>📊 Admin Panel</h1>

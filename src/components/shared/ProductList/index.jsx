@@ -1,4 +1,8 @@
 export default function ProductList({ data = [] }) {
+  const handleViewBook = (book) => {
+    alert(`📖 Detail Buku:\n\nJudul: ${book.title}\nAuthor: ${book.author}\nTahun: ${book.year}\n\nDeskripsi:\n${book.description}`);
+  };
+
   return (
     <>
       <section id="books" className="text-center mb-5">
@@ -23,7 +27,11 @@ export default function ProductList({ data = [] }) {
                 <p className="text-muted">Tahun: {book.year}</p>
                 <p>{book.description}</p>
 
-                <button className="btn btn-sm btn-outline-primary">
+                <button
+                  className="btn btn-sm btn-outline-primary"
+                  onClick={() => handleViewBook(book)}
+                  style={{ cursor: "pointer" }}
+                >
                   View
                 </button>
               </div>

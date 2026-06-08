@@ -7,9 +7,18 @@ export default function GenreManager() {
     const [formData, setFormData] = useState({ name: "", description: "" });
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
+    const [editingId, setEditingId] = useState(null);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
     useEffect(() => {
-        setGenres(genresData);
+        // Load dari localStorage, jika ada. Jika tidak ada, gunakan default data
+        const savedGenres = localStorage.getItem("genres");
+        if (savedGenres) {
+            setGenres(JSON.parse(savedGenres));
+        } else {
+            setGenres(genresData);
+            localStorage.setItem("genres", JSON.stringify(genresData));
+        }
     }, []);
 
     const handleInputChange = (e) => {
@@ -28,15 +37,45 @@ export default function GenreManager() {
             name: formData.name,
             description: formData.description,
         };
-        setGenres([...genres, newGenre]);
+        const updatedGenres = [...genres, newGenre];
+        setGenres(updatedGenres);
+        localStorage.setItem("genres", JSON.stringify(updatedGenres));
         setFormData({ name: "", description: "" });
         setIsFormOpen(false);
-        alert("Genre berhasil ditambahkan!");
+        alert("✅ Genre berhasil ditambahkan!");
+    };
+
+    const handleEditClick = (genre) => {
+        setEditingId(genre.id);
+        setFormData({ name: genre.name, description: genre.description });
+        setIsEditModalOpen(true);
+    };
+
+    const handleUpdateGenre = (e) => {
+        e.preventDefault();
+        if (formData.name.trim() === "") {
+            alert("Nama genre tidak boleh kosong!");
+            return;
+        }
+        const updatedGenres = genres.map((g) =>
+            g.id === editingId
+                ? { ...g, name: formData.name, description: formData.description }
+                : g
+        );
+        setGenres(updatedGenres);
+        localStorage.setItem("genres", JSON.stringify(updatedGenres));
+        setFormData({ name: "", description: "" });
+        setEditingId(null);
+        setIsEditModalOpen(false);
+        alert("✅ Genre berhasil diperbarui!");
     };
 
     const handleDeleteGenre = (id) => {
-        if (confirm("Apakah Anda yakin ingin menghapus genre ini?")) {
-            setGenres(genres.filter((g) => g.id !== id));
+        if (confirm("⚠️ Apakah Anda yakin ingin menghapus genre ini?")) {
+            const updatedGenres = genres.filter((g) => g.id !== id);
+            setGenres(updatedGenres);
+            localStorage.setItem("genres", JSON.stringify(updatedGenres));
+            alert("✅ Genre berhasil dihapus!");
         }
     };
 
@@ -102,6 +141,62 @@ export default function GenreManager() {
                 </div>
             )}
 
+            {isEditModalOpen && (
+                <div className="modal-overlay" onClick={() => setIsEditModalOpen(false)}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2>✏️ Edit Genre</h2>
+                            <button
+                                className="modal-close"
+                                onClick={() => setIsEditModalOpen(false)}
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        <form onSubmit={handleUpdateGenre} className="modal-form">
+                            <div className="form-group">
+                                <label htmlFor="edit-name">Nama Genre *</label>
+                                <input
+                                    type="text"
+                                    id="edit-name"
+                                    name="name"
+                                    placeholder="Masukkan nama genre..."
+                                    value={formData.name}
+                                    onChange={handleInputChange}
+                                    className="form-input"
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="edit-description">Deskripsi</label>
+                                <textarea
+                                    id="edit-description"
+                                    name="description"
+                                    placeholder="Masukkan deskripsi genre..."
+                                    value={formData.description}
+                                    onChange={handleInputChange}
+                                    className="form-textarea"
+                                    rows="3"
+                                />
+                            </div>
+
+                            <div className="modal-actions">
+                                <button type="submit" className="btn-submit">
+                                    💾 Perbarui Genre
+                                </button>
+                                <button
+                                    type="button"
+                                    className="btn-cancel"
+                                    onClick={() => setIsEditModalOpen(false)}
+                                >
+                                    Batal
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
             <div className="data-grid">
                 {filteredGenres.length === 0 ? (
                     <div className="empty-state">
@@ -116,6 +211,12 @@ export default function GenreManager() {
                             </div>
                             <p className="card-description">{genre.description}</p>
                             <div className="card-actions">
+                                <button
+                                    className="btn-edit"
+                                    onClick={() => handleEditClick(genre)}
+                                >
+                                    ✏️ Edit
+                                </button>
                                 <button
                                     className="btn-delete"
                                     onClick={() => handleDeleteGenre(genre.id)}
